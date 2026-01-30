@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeador de Programas Universitarios</title>
+    <meta name="description" content="Herramienta para mapear programas de leads universitarios desde Neotel">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎯</span>
+                <h1>Mapeador de Programas</h1>
+            </div>
+            <p class="subtitle">Normaliza programas de leads universitarios automáticamente</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <!-- Official Programs Card -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <span class="card-icon">📋</span>
+                        <h2>Lista de Programas Oficiales</h2>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="officialPrograms" placeholder="Pega aquí la lista de programas oficiales (uno por línea)...
+
+Ejemplo:
+Ingeniería de Mantenimiento 2025
+Enfermería 2025
+Administración de Empresas 2025"></textarea>
+                        <div class="card-footer">
+                            <span id="programCount" class="badge">0 programas</span>
+                            <button id="loadPrograms" class="btn btn-secondary">
+                                <span>📥</span> Cargar Lista
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload Card -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <span class="card-icon">📁</span>
+                        <h2>Archivo de Neotel</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="dropZone" class="drop-zone">
+                            <div class="drop-zone-content">
+                                <span class="drop-icon">📤</span>
+                                <p>Arrastra tu archivo aquí</p>
+                                <span class="drop-hint">o haz clic para seleccionar</span>
+                                <span class="drop-formats">XLS, XLSX, CSV</span>
+                            </div>
+                            <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" hidden>
+                        </div>
+                        <div id="fileInfo" class="file-info hidden">
+                            <span class="file-icon">📊</span>
+                            <div class="file-details">
+                                <span id="fileName" class="file-name"></span>
+                                <span id="fileStats" class="file-stats"></span>
+                            </div>
+                            <button id="removeFile" class="btn-icon" title="Quitar archivo">✕</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column Detection -->
+            <section id="columnSection" class="column-section hidden">
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <span class="card-icon">🔍</span>
+                        <h2>Columnas Detectadas</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="column-grid" id="columnGrid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Button -->
+            <div id="actionSection" class="action-section hidden">
+                <button id="startMapping" class="btn btn-primary btn-large">
+                    <span>🚀</span> Iniciar Mapeo
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section hidden">
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h2>Resultados del Mapeo</h2>
+                        <div class="header-actions">
+                            <div class="stats-badges">
+                                <span id="autoMapped" class="badge badge-success">0 auto-mapeados</span>
+                                <span id="needsReview" class="badge badge-warning">0 pendientes</span>
+                                <span id="unmapped" class="badge badge-error">0 sin mapear</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filter Tabs -->
+                        <div class="filter-tabs">
+                            <button class="tab-btn active" data-filter="all">Todos</button>
+                            <button class="tab-btn" data-filter="mapped">Mapeados ✅</button>
+                            <button class="tab-btn" data-filter="pending">Pendientes ⚠️</button>
+                            <button class="tab-btn" data-filter="unmapped">Sin Mapear ❌</button>
+                        </div>
+                        
+                        <!-- Mapping Table -->
+                        <div class="table-container">
+                            <table id="mappingTable" class="mapping-table">
+                                <thead>
+                                    <tr>
+                                        <th>Programa Original</th>
+                                        <th>Programa Mapeado</th>
+                                        <th>Coincidencia</th>
+                                        <th>Registros</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mappingTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button id="exportBtn" class="btn btn-primary">
+                            <span>📥</span> Exportar Excel Mapeado
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Mapeador de Programas v1.0 • GrupoNods</p>
+        </footer>
+    </div>
+
+    <!-- Modal for Manual Mapping -->
+    <div id="mappingModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Mapear Programa</h3>
+                <button class="modal-close" id="closeModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-field">
+                    <label>Programa Original:</label>
+                    <p id="modalOriginal" class="original-program"></p>
+                </div>
+                <div class="modal-field">
+                    <label>Seleccionar programa de la lista oficial:</label>
+                    <select id="modalSelect" class="modal-select">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label>O dejarlo sin mapear:</label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="leaveUnmapped">
+                        <span>Dejar como está (sin mapear)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelMapping" class="btn btn-secondary">Cancelar</button>
+                <button id="confirmMapping" class="btn btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

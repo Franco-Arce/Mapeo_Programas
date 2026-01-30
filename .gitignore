@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Test files
+test_*.js
+
+# Data files (no subir datos sensibles)
+*.xls
+*.xlsx
+*.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
