@@ -14,8 +14,10 @@ const state = {
         program: null,
         email: null,
         phone: null,
-        contactId: null
+        contactId: null,
+        database: null
     },
+    uniqueDatabases: [],
     mappings: new Map(), // original -> { mapped, score, status }
     programCounts: new Map(), // original -> count
     currentEditProgram: null
@@ -164,7 +166,8 @@ const COLUMN_PATTERNS = {
     program: ['program', 'programa', 'interes', 'carrera'],
     email: ['email', 'mail', 'correo', 'eml'],
     phone: ['tel', 'phone', 'celular', 'telefono', 'whatsapp'],
-    contactId: ['id', 'contacto', 'codigo', 'identificador']
+    contactId: ['idinterno', 'id', 'contacto', 'codigo', 'identificador'],
+    database: ['iddatabase', 'database', 'base']
 };
 
 function detectColumns(headers) {
@@ -172,7 +175,8 @@ function detectColumns(headers) {
         program: null,
         email: null,
         phone: null,
-        contactId: null
+        contactId: null,
+        database: null
     };
 
     for (const header of headers) {
@@ -198,6 +202,11 @@ function detectColumns(headers) {
         // Contact ID detection
         if (normalizedHeader.includes('id') && normalizedHeader.includes('contacto')) {
             detected.contactId = header;
+        }
+
+        // Database detection
+        if (COLUMN_PATTERNS.database.some(p => normalizedHeader.includes(p))) {
+            detected.database = header;
         }
     }
 
@@ -235,6 +244,19 @@ function handleFile(file) {
             // Detect columns
             state.detectedColumns = detectColumns(state.headers);
 
+            // Extract unique databases if database column exists
+            state.uniqueDatabases = [];
+            if (state.detectedColumns.database) {
+                const databaseSet = new Set();
+                for (const row of jsonData) {
+                    const dbValue = row[state.detectedColumns.database];
+                    if (dbValue !== null && dbValue !== undefined && dbValue !== '') {
+                        databaseSet.add(dbValue.toString());
+                    }
+                }
+                state.uniqueDatabases = [...databaseSet].sort((a, b) => Number(a) - Number(b));
+            }
+
             // Update UI
             elements.dropZone.classList.add('hidden');
             elements.fileInfo.classList.remove('hidden');
@@ -258,16 +280,17 @@ function handleFile(file) {
 }
 
 function renderColumnDetection() {
-    const { detectedColumns, headers } = state;
+    const { detectedColumns, headers, uniqueDatabases } = state;
 
     const keyColumns = [
         { key: 'program', label: 'Programa', icon: '🎓' },
         { key: 'email', label: 'Email', icon: '📧' },
         { key: 'phone', label: 'Teléfono', icon: '📱' },
-        { key: 'contactId', label: 'ID Contacto', icon: '🆔' }
+        { key: 'contactId', label: 'ID Contacto', icon: '🆔' },
+        { key: 'database', label: 'Base de Datos', icon: '🗄️' }
     ];
 
-    elements.columnGrid.innerHTML = keyColumns.map(col => {
+    let html = keyColumns.map(col => {
         const detected = detectedColumns[col.key];
         return `
             <div class="column-tag ${detected ? 'detected' : ''}">
@@ -277,6 +300,20 @@ function renderColumnDetection() {
             </div>
         `;
     }).join('');
+
+    // Add unique databases info if detected
+    if (uniqueDatabases.length > 0) {
+        html += `
+            <div class="column-tag detected database-list">
+                <span class="icon">📊</span>
+                <span>Bases encontradas:</span>
+                <strong>${uniqueDatabases.join(', ')}</strong>
+                <span class="badge">${uniqueDatabases.length} base${uniqueDatabases.length > 1 ? 's' : ''}</span>
+            </div>
+        `;
+    }
+
+    elements.columnGrid.innerHTML = html;
 }
 
 // ========================================
@@ -666,7 +703,8 @@ elements.fileInput.addEventListener('change', (e) => {
 elements.removeFile.addEventListener('click', () => {
     state.fileData = null;
     state.headers = [];
-    state.detectedColumns = { program: null, email: null, phone: null, contactId: null };
+    state.detectedColumns = { program: null, email: null, phone: null, contactId: null, database: null };
+    state.uniqueDatabases = [];
 
     elements.fileInfo.classList.add('hidden');
     elements.dropZone.classList.remove('hidden');

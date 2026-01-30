@@ -432,6 +432,26 @@ textarea::placeholder {
     font-size: 1rem;
 }
 
+.column-tag.database-list {
+    width: 100%;
+    flex-wrap: wrap;
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: var(--accent-primary);
+    padding: 0.75rem 1rem;
+}
+
+.column-tag.database-list strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.column-tag.database-list .badge {
+    margin-left: auto;
+    background: var(--accent-primary);
+    color: white;
+}
+
 /* ========================================
    Action Section
    ======================================== */
